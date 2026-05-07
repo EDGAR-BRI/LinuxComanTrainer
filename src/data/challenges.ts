@@ -117,14 +117,20 @@ export const challenges: Challenge[] = [
     }
   },
   {
-    id: 9,
+    id: 7,
     difficulty: 'intermediate',
-    description: 'Copia el archivo notas.txt como notas_backup.txt',
+    description: 'Copia el archivo notas.txt a una copia llamada notas_backup.txt',
     hint1: 'Necesitas crear una copia del archivo',
     hint2: 'Prueba con: cp notas.txt notas_backup.txt',
     points: 20,
     validate: (vfs) => {
-      return vfs.getFileList().some(f => f.name === 'notas_backup.txt');
+      const files = vfs.getFileList();
+      const found = files.some(f => f.name === 'notas_backup.txt');
+      if (!found) {
+        const fullNode = vfs.findNodePublic && vfs.findNodePublic('/home/user/notas_backup.txt');
+        return fullNode !== null;
+      }
+      return found;
     }
   },
   {

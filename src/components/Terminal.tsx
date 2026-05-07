@@ -441,21 +441,21 @@ export default function Terminal() {
 
       <div ref={terminalRef} className="terminal-body" onClick={() => inputRef.current?.focus()}>
         <FileTree vfs={vfs} />
-        {history.map((entry, i) => (
-          <div key={i} className="mb-2">
-            {entry.input && (
-              <div className="terminal-input-line">
-                <span className="terminal-prompt">user@trainer:{vfs.cwd}$</span>
-                <span className="text-white break-all">{entry.input}</span>
-              </div>
-            )}
-            {entry.output && (
-              <pre className={`whitespace-pre-wrap text-sm ${entry.status === 'error' ? 'cmd-error' : 'cmd-success'}`}>
-                {entry.output}
-              </pre>
-            )}
-          </div>
-        ))}
+          {history.map((entry, i) => (
+            <div key={i} className="mb-2">
+              {entry.input && (
+                <div className="terminal-input-line">
+                  <span className="terminal-prompt whitespace-nowrap">user@trainer:{entry.cwd}$</span>
+                  <span className="text-white break-all">{entry.input}</span>
+                </div>
+              )}
+              {entry.output && (
+                <pre className={`whitespace-pre-wrap text-sm ${entry.status === 'error' ? 'cmd-error' : 'cmd-success'}`}>
+                  {entry.output}
+                </pre>
+              )}
+            </div>
+          ))}
         <form onSubmit={handleSubmit} className="terminal-input-line">
           <span className="terminal-prompt whitespace-nowrap">user@trainer:{vfs.cwd}$</span>
           <input

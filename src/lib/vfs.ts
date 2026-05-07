@@ -483,4 +483,8 @@ Se han configurado ${pkg}.`, status: 'success' };
   findNodePublic(path: string): VFSNode | null {
     return this.findNode(path);
   }
+
+  exists(path: string): boolean {
+    return this.findNode(path) !== null;
+  }
 }
