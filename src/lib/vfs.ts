@@ -140,16 +140,31 @@ export class VirtualFS {
     return { output: '', status: 'success' };
   }
 
-  ls(target?: string): CommandResult {
+  ls(target?: string, flags?: string): CommandResult {
     const node = target ? this.findNode(target) : this._cwd;
     if (!node) return { output: `ls: no se puede acceder a '${target}': No existe`, status: 'error' };
     if (node.type === 'file') return { output: node.name, status: 'success' };
     if (!node.children) return { output: '', status: 'success' };
-    const items = node.children.map(c => {
-      const prefix = c.type === 'directory' ? 'd' : '-';
-      return `${c.permissions} 1 user user 4096 ${c.modified.toLocaleDateString()} ${c.name}`;
-    });
-    return { output: items.join('\n'), status: 'success' };
+
+    const showAll = flags?.includes('a') || false;
+    const longFormat = flags?.includes('l') || false;
+
+    let items = node.children;
+    if (!showAll) {
+      items = items.filter(c => !c.name.startsWith('.'));
+    }
+
+    if (longFormat) {
+      return {
+        output: items.map(c => {
+          const prefix = c.type === 'directory' ? 'd' : '-';
+          return `${prefix}${c.permissions} 1 user user 4096 ${c.modified.toLocaleDateString()} ${c.name}`;
+        }).join('\n'),
+        status: 'success'
+      };
+    }
+
+    return { output: items.map(c => c.name).join('\n'), status: 'success' };
   }
 
   mkdir(name: string): CommandResult {
@@ -428,6 +443,7 @@ Se han configurado ${pkg}.`, status: 'success' };
   }
 
   head(name: string, lines: number = 5): CommandResult {
+    if (!name) return { output: 'head: falta operando', status: 'error' };
     const result = this.cat(name);
     if (result.status === 'error') return result;
     const content = result.output.split('\n').slice(0, lines).join('\n');
@@ -435,6 +451,7 @@ Se han configurado ${pkg}.`, status: 'success' };
   }
 
   tail(name: string, lines: number = 5): CommandResult {
+    if (!name) return { output: 'tail: falta operando', status: 'error' };
     const result = this.cat(name);
     if (result.status === 'error') return result;
     const content = result.output.split('\n').slice(-lines).join('\n');

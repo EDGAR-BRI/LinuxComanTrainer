@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import { useState } from 'react';
 import { VirtualFS } from '../lib/vfs';
 
 interface FileTreeProps {
@@ -7,42 +6,63 @@ interface FileTreeProps {
 }
 
 export default function FileTree({ vfs }: FileTreeProps) {
-  const treeRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (treeRef.current) {
-      gsap.fromTo(treeRef.current,
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.3 }
-      );
-    }
-  }, [vfs.cwd]);
+  const [showFullTree, setShowFullTree] = useState(false);
+  const currentDir = vfs.cwd;
+  const files = vfs.getFileList();
 
   const renderTree = (node: any, depth: number = 0): JSX.Element => {
     const isCurrentDir = node.path === vfs.cwd;
     const indent = '  '.repeat(depth);
+    const icon = node.type === 'directory' ? '📁' : '📄';
 
     return (
-      <div key={node.path}>
-        <div class={`flex items-center gap-1 ${isCurrentDir ? 'text-yellow-400 font-bold' : 'text-gray-300'}`}>
-          <span class="text-gray-600">{indent}</span>
-          {node.type === 'directory' ? '📁' : '📄'}
-          <span>{node.name}</span>
-          {isCurrentDir && <span class="text-xs text-green-400 ml-2">(actual)</span>}
-        </div>
-        {node.children && node.children.map((child: any) => renderTree(child, depth + 1))}
+      <div key={node.path} className="whitespace-nowrap">
+        <span className={`${isCurrentDir ? 'text-yellow-400 font-bold' : 'text-gray-300'}`}>
+          {indent}{icon} {node.name}
+          {isCurrentDir && <span className="text-xs text-green-400 ml-2">(actual)</span>}
+        </span>
+        {node.children && (
+          <div className="ml-4">
+            {node.children.map((child: any) => renderTree(child, depth + 1))}
+          </div>
+        )}
       </div>
     );
   };
 
-  const root = (vfs as any).root;
-
   return (
-    <div ref={treeRef} class="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4 overflow-auto max-h-48">
-      <h3 class="text-sm text-gray-400 mb-2 font-bold">ÁRBOL DE DIRECTORIOS</h3>
-      <div class="font-mono text-sm">
-        {renderTree(root)}
+    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-4 text-sm">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-gray-400 truncate">📂 {currentDir}</span>
+        <button
+          onClick={() => setShowFullTree(!showFullTree)}
+          className="text-xs text-blue-400 hover:text-blue-300 whitespace-nowrap ml-2"
+        >
+          {showFullTree ? 'Ocultar árbol' : 'Ver árbol completo'}
+        </button>
       </div>
+
+      {/* Current directory contents */}
+      <div className="space-y-1 mb-2">
+        {files.map((f, i) => (
+          <div key={i} className="flex items-center gap-2 text-gray-300">
+            <span>{f.type === 'directory' ? '📁' : '📄'}</span>
+            <span className="truncate">{f.name}</span>
+          </div>
+        ))}
+        {files.length === 0 && (
+          <p className="text-gray-500 italic text-xs">Directorio vacío</p>
+        )}
+      </div>
+
+      {/* Optional full tree */}
+      {showFullTree && (
+        <div className="mt-3 pt-3 border-t border-gray-700 overflow-x-auto">
+          <div className="text-xs">
+            {renderTree((vfs as any).root)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
