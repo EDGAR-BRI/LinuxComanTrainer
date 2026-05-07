@@ -37,6 +37,15 @@ export default function Terminal() {
   const [testScore, setTestScore] = useState(0);
   const [testTotal, setTestTotal] = useState(0);
 
+  const commandValidationMap: Record<string, number[]> = {
+    pwd: [1],
+    ls: [2],
+    cd: [5, 6],
+    cat: [7],
+    head: [12],
+    tail: [14]
+  };
+
   useEffect(() => {
     if (mode !== 'menu') {
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -145,13 +154,14 @@ export default function Terminal() {
     if (!input.trim()) return;
 
     const cmd = input.trim();
+    const currentCwd = vfs.cwd;
     const result = executeCommand(cmd);
 
     const newEntry: HistoryEntry = {
       input: cmd,
       output: result.output,
       status: result.status,
-      cwd: vfs.cwd
+      cwd: currentCwd
     };
 
     setHistory(prev => [...prev, newEntry]);
@@ -167,8 +177,10 @@ export default function Terminal() {
 
     if (mode === 'test' && difficulty) {
       const baseCmd = cmd.split(/\s+/)[0].toLowerCase();
-      const navigationCommands = ['pwd', 'ls', 'cd', 'clear', 'help', 'cat', 'less', 'head', 'tail'];
-      if (!navigationCommands.includes(baseCmd)) {
+      const challengeIdsThatNeedThisCommand = commandValidationMap[baseCmd];
+      const shouldValidate = !challengeIdsThatNeedThisCommand || (currentChallenge !== null && challengeIdsThatNeedThisCommand.includes(currentChallenge.id));
+
+      if (shouldValidate) {
         checkChallenge(cmd);
       }
     }
@@ -362,7 +374,7 @@ export default function Terminal() {
             <div key={i} className="mb-2">
               {entry.input && (
                 <div className="terminal-input-line">
-                  <span className="terminal-prompt">user@trainer:{vfs.cwd}$</span>
+                  <span className="terminal-prompt">user@trainer:{entry.cwd}$</span>
                   <span className="text-white break-all">{entry.input}</span>
                 </div>
               )}

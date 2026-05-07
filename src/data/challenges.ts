@@ -108,16 +108,29 @@ export const challenges: Challenge[] = [
   {
     id: 8,
     difficulty: 'intermediate',
-    description: 'Mueve el archivo archivo01.txt al directorio prueba',
-    hint1: 'Primero ubícate en /home/user, luego mueve el archivo',
+    description: 'Mueve el archivo archivo01.txt al directorio prueba (estando en /home/user)',
+    hint1: 'Primero navega a /home/user, luego mueve el archivo',
     hint2: 'cd /home/user, luego: mv archivo01.txt prueba/',
     points: 25,
     validate: (vfs) => {
-      return vfs['findNodePublic']('/home/user/prueba/archivo01.txt') !== null;
+      return vfs.findNodePublic('/home/user/prueba/archivo01.txt') !== null;
     }
   },
   {
-    id: 7,
+    id: 9,
+    difficulty: 'intermediate',
+    description: 'Copia el archivo notas.txt a una copia llamada notas_backup.txt (en /home/user)',
+    hint1: 'Navega a /home/user, luego copia el archivo',
+    hint2: 'cd /home/user, luego: cp notas.txt notas_backup.txt',
+    points: 20,
+    validate: (vfs) => {
+      // Check if file exists in current directory or in /home/user
+      const node = vfs.findNodePublic && vfs.findNodePublic('/home/user/notas_backup.txt');
+      return node !== null && node.type === 'file';
+    }
+  },
+  {
+    id: 22,
     difficulty: 'intermediate',
     description: 'Copia el archivo notas.txt a una copia llamada notas_backup.txt',
     hint1: 'Necesitas crear una copia del archivo',

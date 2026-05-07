@@ -123,6 +123,15 @@ export class VirtualFS {
     return parentStr === '/' ? this.root : this.findNode(parentStr);
   }
 
+  private numericToSymbolic(mode: string): string {
+    if (!/^\d{3}$/.test(mode)) return mode;
+    const permMap = ['---', '--x', '-w-', '-wx', 'r--', 'r-x', 'rw-', 'rwx'];
+    const owner = permMap[parseInt(mode[0], 10)];
+    const group = permMap[parseInt(mode[1], 10)];
+    const other = permMap[parseInt(mode[2], 10)];
+    return `${owner}${group}${other}`;
+  }
+
   pwd(): CommandResult {
     return { output: this._cwd.path, status: 'success' };
   }
@@ -230,18 +239,35 @@ export class VirtualFS {
   }
 
   cp(src: string, dest: string): CommandResult {
-    if (!src || !dest) return { output: 'cp: falta operando', status: 'error' };
+    if (!src || !dest) return { output: 'cp: faltan operandos', status: 'error' };
     const srcNode = this.findNode(src);
     if (!srcNode) return { output: `cp: no se puede obtener '${src}': No existe`, status: 'error' };
+    
     const destNode = this.findNode(dest);
-    const targetDir = destNode?.type === 'directory' ? destNode : this._cwd;
-    if (destNode?.type === 'directory') {
-      targetDir.children = targetDir.children || [];
-      targetDir.children.push({ ...srcNode, name: srcNode.name, path: `${targetDir.path}/${srcNode.name}`, modified: new Date() });
+    const isDestDir = destNode?.type === 'directory';
+    
+    if (isDestDir) {
+      // Copy into directory
+      const newFile = { 
+        ...srcNode, 
+        name: srcNode.name, 
+        path: `${destNode.path}/${srcNode.name}`,
+        modified: new Date()
+      };
+      destNode.children = destNode.children || [];
+      destNode.children.push(newFile);
     } else {
+      // Copy with new name in current directory
+      const newFile = { 
+        ...srcNode, 
+        name: dest, 
+        path: `${this._cwd.path}/${dest}`,
+        modified: new Date()
+      };
       this._cwd.children = this._cwd.children || [];
-      this._cwd.children.push({ ...srcNode, name: dest, path: `${this._cwd.path}/${dest}`, modified: new Date() });
+      this._cwd.children.push(newFile);
     }
+    
     return { output: '', status: 'success' };
   }
 
@@ -258,7 +284,7 @@ export class VirtualFS {
     } else {
       srcNode.name = dest;
       srcNode.path = `${this._cwd.path}/${dest}`;
-    }
+  }
     return { output: '', status: 'success' };
   }
 
@@ -278,7 +304,8 @@ export class VirtualFS {
     if (!mode || !name) return { output: 'chmod: falta operando', status: 'error' };
     const node = this.findNode(name);
     if (!node) return { output: `chmod: no se puede acceder a '${name}': No existe`, status: 'error' };
-    node.permissions = node.type === 'directory' ? `d${mode}` : `-${mode}`;
+    const symbolicMode = /^\d{3}$/.test(mode) ? this.numericToSymbolic(mode) : mode;
+    node.permissions = node.type === 'directory' ? `d${symbolicMode}` : `-${symbolicMode}`;
     return { output: '', status: 'success' };
   }
 
