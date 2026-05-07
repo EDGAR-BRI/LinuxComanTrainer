@@ -273,18 +273,60 @@ export class VirtualFS {
 
   mv(src: string, dest: string): CommandResult {
     if (!src || !dest) return { output: 'mv: falta operando', status: 'error' };
-    const srcNode = this._cwd.children?.find(c => c.name === src);
+    const srcNode = this.findNode(src);
     if (!srcNode) return { output: `mv: no se puede mover '${src}': No existe`, status: 'error' };
+
+    const srcParent = this.findParent(src);
+    if (!srcParent || srcParent.type !== 'directory') {
+      return { output: `mv: no se puede mover '${src}': origen inválido`, status: 'error' };
+    }
+
+    let targetParent: VFSNode | null = null;
+    let targetName = srcNode.name;
+
     const destNode = this.findNode(dest);
     if (destNode?.type === 'directory') {
-      srcNode.path = `${destNode.path}/${srcNode.name}`;
-      destNode.children = destNode.children || [];
-      destNode.children.push(srcNode);
-      this._cwd.children = this._cwd.children?.filter(c => c.name !== src) || [];
+      targetParent = destNode;
+      targetName = srcNode.name;
     } else {
-      srcNode.name = dest;
-      srcNode.path = `${this._cwd.path}/${dest}`;
-  }
+      const normalizedDest = this.normalizePath(dest);
+      const parts = normalizedDest.split('/').filter(Boolean);
+      if (parts.length === 0) {
+        return { output: `mv: no se puede mover '${src}' a '/': destino inválido`, status: 'error' };
+      }
+
+      targetName = parts[parts.length - 1];
+      const parentPath = parts.length === 1 ? '/' : `/${parts.slice(0, -1).join('/')}`;
+      const parentNode = parentPath === '/' ? this.root : this.findNode(parentPath);
+
+      if (!parentNode || parentNode.type !== 'directory') {
+        return { output: `mv: no se puede mover '${src}' a '${dest}': directorio destino no existe`, status: 'error' };
+      }
+      targetParent = parentNode;
+    }
+
+    const existingTarget = targetParent.children?.find(c => c.name === targetName);
+    if (existingTarget && existingTarget !== srcNode) {
+      return { output: `mv: no se puede mover '${src}' a '${dest}': el destino ya existe`, status: 'error' };
+    }
+
+    srcParent.children = (srcParent.children || []).filter(c => c !== srcNode);
+    targetParent.children = targetParent.children || [];
+
+    srcNode.name = targetName;
+    srcNode.path = targetParent.path === '/' ? `/${targetName}` : `${targetParent.path}/${targetName}`;
+
+    const updateChildPaths = (node: VFSNode) => {
+      if (!node.children) return;
+      node.children.forEach(child => {
+        child.path = node.path === '/' ? `/${child.name}` : `${node.path}/${child.name}`;
+        updateChildPaths(child);
+      });
+    };
+
+    updateChildPaths(srcNode);
+    targetParent.children.push(srcNode);
+
     return { output: '', status: 'success' };
   }
 
@@ -509,9 +551,5 @@ Se han configurado ${pkg}.`, status: 'success' };
 
   findNodePublic(path: string): VFSNode | null {
     return this.findNode(path);
-  }
-
-  exists(path: string): boolean {
-    return this.findNode(path) !== null;
   }
 }
