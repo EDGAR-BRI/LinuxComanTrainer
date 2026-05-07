@@ -1,0 +1,37 @@
+---
+import Terminal from '../components/Terminal';
+import '../styles/global.css';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Linux Command Trainer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+    <div class="min-h-screen p-4 md:p-8">
+      <header class="text-center mb-8">
+        <div class="inline-block p-1 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 rounded-lg mb-4">
+          <div class="bg-gray-900 rounded-md px-6 py-2">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400" style="font-family: 'Fira Code', monospace">
+              Linux Command Trainer
+            </h1>
+          </div>
+        </div>
+        <p class="text-gray-400 text-lg">Aprende comandos de Linux de forma interactiva y divertida</p>
+      </header>
+
+      <main class="max-w-7xl mx-auto">
+        <Terminal client:load />
+      </main>
+
+      <footer class="text-center mt-8 text-gray-600 text-sm">
+        <p>Simulador de terminal Linux | Desarrollado con Astro + React + Tailwind + GSAP</p>
+      </footer>
+    </div>
+  </body>
+</html>
